@@ -1,0 +1,14 @@
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+virtualenv/
+.virtualenv/
+*.json
+*.npy
