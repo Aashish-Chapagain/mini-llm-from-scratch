@@ -1,8 +1,5 @@
-import requests
-import json
-import time
+import requests, json, time, unicodedata, re
 from bs4 import BeautifulSoup
-import unicodedata
 
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
 
@@ -13,6 +10,7 @@ def clean_text(text):
     text = text.replace("\u2018", "'")
     text = text.replace("\u201c", '"')
     text = text.replace("\u201d", '"')
+    text = re.sub(r'^\d+[\.\)]\s*', '', text)
     text = text.encode("ascii", "ignore").decode("ascii")
     return text.strip()
 
