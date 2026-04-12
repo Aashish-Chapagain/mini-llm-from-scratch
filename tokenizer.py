@@ -50,6 +50,8 @@ def tokenize_dataset(dataset, char2idx,  max_length):
 
         inputs.append(padded[:-1])
         targets.append(padded[1:])
+        print(inputs[0:2], targets[0:2])
+        print(np.shape(inputs), np.shape(targets))
 
     return np.array(inputs), np.array(targets)
 
@@ -74,4 +76,4 @@ def main():
     print(f"Tokenization complete. Vocabulary size: {len(char_to_id)}. Dataset size: {len(dataset)}.{inputs.shape} input-target pairs saved.")
 
 
-main()
+main() 
