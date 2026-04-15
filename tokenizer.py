@@ -16,7 +16,8 @@ def build_vocab(dataset):
     for pair in dataset:
         vocab.update(pair["input"].lower())
         vocab.update(pair["output"].lower())
-    
+    for char in "<user> <bot>":
+     vocab.add(char)
     vocab = sorted(vocab)
     vocab = ['<PAD>'] + vocab
 
@@ -73,8 +74,11 @@ def main():
     np.save("inputs.npy", inputs)
     np.save("targets.npy", targets)
     print(f"Tokenization complete. Vocabulary size: {len(char_to_id)}. Dataset size: {len(dataset)}.{inputs.shape} input-target pairs saved.")
-    print(f"PAD id: {char_to_id.get('<PAD>', 'NOT FOUND')}")
-    print(f"Space id: {char_to_id.get(' ', 'NOT FOUND')}")
+    print(char_to_id.get('<', 'NOT FOUND'))
+    print(char_to_id.get('>', 'NOT FOUND'))
+    print(char_to_id.get('u', 'NOT FOUND'))
+    print(char_to_id.get('b', 'NOT FOUND'))
+    
 
 
 main() 
