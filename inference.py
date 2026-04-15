@@ -31,7 +31,7 @@ def build_model_from_checkpoint(weights_path="model_weights.npz"):
     return model
 
 
-def generate(model, input_ids, max_len=100, temperature=1.0):
+def generate(model, input_ids, max_len=100, temperature=0.7):
     generated = list(input_ids)
 
     for _ in range(max_len):
@@ -52,11 +52,12 @@ def convert_ids_to_text(ids, id_to_char):
 
 def main():
     char_to_id, id_to_char = load_vocab("vocab.json")
+    pad_id = char_to_id.get("<PAD>", 0)
     model = build_model_from_checkpoint("model_weights.npz")
 
     prompt = "hello, how are you? "
-    input_ids = [char_to_id.get(char, 0) for char in prompt.lower()]
-    generated_ids = generate(model, input_ids, max_len=100, temperature=1.0)
+    input_ids = [char_to_id.get(char, pad_id) for char in prompt.lower()]
+    generated_ids = generate(model, input_ids, max_len=100, temperature=0.7)
     generated_text = convert_ids_to_text(generated_ids, id_to_char)
     print("Generated text:", generated_text)
 
