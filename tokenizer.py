@@ -73,11 +73,7 @@ def main():
 
     np.save("inputs.npy", inputs)
     np.save("targets.npy", targets)
-    print(f"Tokenization complete. Vocabulary size: {len(char_to_id)}. Dataset size: {len(dataset)}.{inputs.shape} input-target pairs saved.")
-    print(char_to_id.get('<', 'NOT FOUND'))
-    print(char_to_id.get('>', 'NOT FOUND'))
-    print(char_to_id.get('u', 'NOT FOUND'))
-    print(char_to_id.get('b', 'NOT FOUND'))
+   
     
 
 
