@@ -18,6 +18,7 @@ def build_vocab(dataset):
         vocab.update(pair["output"].lower())
     
     vocab = sorted(vocab)
+    vocab = ['<PAD>'] + vocab
 
     char_to_id = {char: idx for idx, char in enumerate(vocab)}
     id_to_char = {idx: char for idx, char in enumerate(vocab)}
@@ -46,12 +47,10 @@ def tokenize_dataset(dataset, char2idx,  max_length):
         text = "<user> " + pair["input"] + " <bot> " + pair["output"]
         text = text.lower()
         encoded = encoding(text, char2idx)
-        padded = pad_sequence(encoded, max_length, pad_id = char2idx.get("<PAD>", 0)) 
-
+        padded = pad_sequence(encoded, max_length, pad_id = char2idx['<PAD>'])
         inputs.append(padded[:-1])
         targets.append(padded[1:])
-        print(inputs[0:2], targets[0:2])
-        print(np.shape(inputs), np.shape(targets))
+       
 
     return np.array(inputs), np.array(targets)
 
@@ -74,6 +73,8 @@ def main():
     np.save("inputs.npy", inputs)
     np.save("targets.npy", targets)
     print(f"Tokenization complete. Vocabulary size: {len(char_to_id)}. Dataset size: {len(dataset)}.{inputs.shape} input-target pairs saved.")
+    print(f"PAD id: {char_to_id.get('<PAD>', 'NOT FOUND')}")
+    print(f"Space id: {char_to_id.get(' ', 'NOT FOUND')}")
 
 
 main() 
