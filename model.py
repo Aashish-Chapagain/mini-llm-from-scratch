@@ -1,6 +1,7 @@
 import numpy as np
 
 
+
 def create_causal_mask(seq_len):
     mask = np.triu(np.ones((seq_len, seq_len), dtype=bool), k=1)
     return mask[np.newaxis, np.newaxis, :, :]
@@ -232,13 +233,30 @@ class TransformerBlock:
         return dx_res + dx_attn
 
 
-class SGDOptimizer:
-    def __init__(self, learning_rate=1e-3):
+class AdamOptimizer:
+    def __init__(self, learning_rate = 3e-4, beta1=0.9, beta2=0.999, eps=1e-8):
         self.learning_rate = learning_rate
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.eps = eps
+        self.m = {}
+        self.v = {}
+        self.t = 0
+    
+    def step(self, params_and_grads):
+        self.t += 1
+        for name, param, grad in params_and_grads:
+            if name not in self.m:
+                self.m[name] = np.zeros_like(grad)
+                self.v[name] = np.zeros_like(grad)
 
-    def step(self, parameters_and_grads):
-        for _, param, grad in parameters_and_grads:
-            param -= self.learning_rate * grad
+            self.m[name] = self.beta1 * self.m[name] + (1 - self.beta1) * grad
+            self.v[name] = self.beta2 * self.v[name] + (1 - self.beta2) * (grad ** 2)
+
+            m_hat = self.m[name] / (1 - self.beta1 ** self.t)
+            v_hat = self.v[name] / (1 - self.beta2 ** self.t)
+
+            param -= self.learning_rate * m_hat / (np.sqrt(v_hat) + self.eps)
 
 
 class FullModel:
