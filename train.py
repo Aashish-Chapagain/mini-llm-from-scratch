@@ -1,5 +1,6 @@
 import numpy as np 
 from model import FullModel, AdamOptimizer
+import json
 
 
 
@@ -79,7 +80,8 @@ def main():
     train(model, inputs, targets, batch_size=16, epochs=150, learning_rate=3e-4)
     model.save_weights("model_weights.npz")
     model.save_block_checkpoints("block_checkpoints.npz")
-    print("Saved checkpoint: model_weights.npz")
+    # print("Saved checkpoint: model_weights.npz")
+    
 
 
 if __name__ == "__main__":
