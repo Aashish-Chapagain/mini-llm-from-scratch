@@ -2,7 +2,7 @@ import numpy as np
 from model import FullModel, AdamOptimizer
 
 
-
+import json
 
 inputs = np.load("inputs.npy")
 targets = np.load("targets.npy")    
