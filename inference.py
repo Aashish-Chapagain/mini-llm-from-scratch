@@ -35,14 +35,14 @@ def sample_with_top_k_top_p(logits, top_k=20, top_p=0.9, temperature=0.7):
     scaled = logits / max(temperature, 1e-6)
     probs = softmax(scaled)
 
-    # Top-k filtering first.
+   
     if top_k is not None and top_k > 0 and top_k < probs.shape[0]:
         keep = np.argpartition(probs, -top_k)[-top_k:]
         mask = np.zeros_like(probs, dtype=bool)
         mask[keep] = True
         probs = np.where(mask, probs, 0.0)
 
-    # Then nucleus (top-p) filtering.
+   
     if top_p is not None and 0.0 < top_p < 1.0:
         sorted_idx = np.argsort(probs)[::-1]
         sorted_probs = probs[sorted_idx]
@@ -84,7 +84,6 @@ def generate(
         generated = [pad_id]
 
     for _ in range(max_len):
-        # Keep only the latest context that fits positional encoding length.
         context = np.array(generated[-model.max_seq_len :], dtype=np.int64)[None, :]
         logits = model.forward(context)
         next_token_logits = logits[0, -1].copy()
@@ -131,28 +130,104 @@ def extract_bot_reply(full_text):
     return reply.strip()
 
 
-def main():
-    char_to_id, id_to_char = load_vocab("vocab.json")
-    pad_id = char_to_id.get("<PAD>", 0)
-    model = build_model_from_checkpoint("model_weights.npz")
+def _normalize_text(text):
+    return str(text).strip().lower()
 
-    user_prompt = "What would you name your boat if you had one?"
-    prompt = f"<user> {user_prompt.lower()} <bot> "
-    input_ids = [char_to_id.get(char, pad_id) for char in prompt]
+
+def build_chat_prompt(history, user_message, max_context_turns=6):
+    """Build a chat prompt using recent conversation turns and the current user input."""
+    clipped_history = history[-(max_context_turns * 2) :] if max_context_turns > 0 else history
+    parts = []
+    for turn in clipped_history:
+        role = turn.get("role", "").strip().lower()
+        text = _normalize_text(turn.get("text", ""))
+        if not text:
+            continue
+        if role == "user":
+            parts.append(f"<user> {text} ")
+        elif role == "bot":
+            parts.append(f"<bot> {text} ")
+
+    current_user = _normalize_text(user_message)
+    parts.append(f"<user> {current_user} <bot> ")
+    return "".join(parts)
+
+
+def text_to_ids(text, char_to_id, pad_id):
+    return [char_to_id.get(char, pad_id) for char in text]
+
+
+def generate_chat_reply(
+    model,
+    char_to_id,
+    id_to_char,
+    history,
+    user_message,
+    pad_id,
+    max_context_turns=6,
+    max_len=120,
+    temperature=0.65,
+    top_k=12,
+    top_p=0.9,
+    repetition_penalty=1.15,
+):
+    prompt = build_chat_prompt(history, user_message, max_context_turns=max_context_turns)
+    input_ids = text_to_ids(prompt, char_to_id, pad_id)
     generated_ids = generate(
         model,
         input_ids,
         pad_id=pad_id,
-        max_len=120,
-        temperature=0.65,
-        top_k=12,
-        top_p=0.9,
-        repetition_penalty=1.15,
+        max_len=max_len,
+        temperature=temperature,
+        top_k=top_k,
+        top_p=top_p,
+        repetition_penalty=repetition_penalty,
     )
     full_generated = convert_ids_to_text(generated_ids, id_to_char, pad_id=pad_id)
-    bot_reply = extract_bot_reply(full_generated)
-    print("Prompt:", user_prompt)
-    print("Generated reply:", bot_reply)
+    return extract_bot_reply(full_generated)
+
+
+def load_inference_components(vocab_path="vocab.json", weights_path="model_weights.npz"):
+    char_to_id, id_to_char = load_vocab(vocab_path)
+    pad_id = char_to_id.get("<PAD>", 0)
+    model = build_model_from_checkpoint(weights_path)
+    return model, char_to_id, id_to_char, pad_id
+
+
+def main():
+    model, char_to_id, id_to_char, pad_id = load_inference_components(
+        vocab_path="vocab.json",
+        weights_path="model_weights.npz",
+    )
+
+    history = []
+    print("Chat started. Type 'quit' to exit.")
+    while True:
+        user_prompt = input("You: ").strip()
+        if not user_prompt:
+            continue
+        if user_prompt.lower() in {"quit", "exit"}:
+            print("Chat ended.")
+            break
+
+        bot_reply = generate_chat_reply(
+            model=model,
+            char_to_id=char_to_id,
+            id_to_char=id_to_char,
+            history=history,
+            user_message=user_prompt,
+            pad_id=pad_id,
+            max_context_turns=6,
+            max_len=120,
+            temperature=0.65,
+            top_k=12,
+            top_p=0.9,
+            repetition_penalty=1.15,
+        )
+        print("Bot:", bot_reply)
+
+        history.append({"role": "user", "text": user_prompt})
+        history.append({"role": "bot", "text": bot_reply})
 
 
 if __name__ == "__main__":
