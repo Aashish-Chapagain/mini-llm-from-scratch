@@ -1,3 +1,4 @@
+# pyright: basic
 import os
 import numpy as np 
 from model import FullModel, AdamOptimizer

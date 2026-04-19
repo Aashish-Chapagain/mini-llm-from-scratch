@@ -1,3 +1,4 @@
+# pyright: basic
 import numpy as np
 
 
@@ -22,6 +23,8 @@ class Embedding:
     def backward(self, dout):
         self.grad_weights.fill(0.0)
         scaled = dout * np.sqrt(self.d_model)
+        if self._cache_x is None:
+            raise RuntimeError("Embedding.backward called before forward")
         np.add.at(self.grad_weights, self._cache_x, scaled)
 
 
@@ -65,6 +68,8 @@ class LayerNorm:
         return out
 
     def backward(self, dout):
+        if self._cache is None:
+            raise RuntimeError("LayerNorm.backward called before forward")
         x, x_hat, mean, var, std = self._cache
         n = x.shape[-1]
 
@@ -134,6 +139,8 @@ class MultiHeadAttention:
         return out
 
     def backward(self, dout):
+        if self._cache is None:
+            raise RuntimeError("MultiHeadAttention.backward called before forward")
         x, q, k, v, attn, combined, mask = self._cache
 
         self.grad_w_o = np.einsum("bti,btj->ij", combined, dout)
@@ -188,6 +195,8 @@ class FeedForward:
         return out
 
     def backward(self, dout):
+        if self._cache is None:
+            raise RuntimeError("FeedForward.backward called before forward")
         x, z1, a1 = self._cache
         self.grad_w2 = np.einsum("bti,btj->ij", a1, dout)
         self.grad_b2 = np.sum(dout, axis=(0, 1))
@@ -314,6 +323,8 @@ class FullModel:
 
     def backward(self, dlogits):
         hidden = self._cache_hidden
+        if hidden is None:
+            raise RuntimeError("FullModel.backward called before forward")
         self.grad_output_layer = np.einsum("bti,btj->ij", hidden, dlogits)
         dhidden = np.matmul(dlogits, self.output_layer.T)
 

@@ -1,3 +1,4 @@
+# pyright: basic
 import json
 import numpy as np
 from model import FullModel
@@ -36,14 +37,14 @@ def sample_with_top_k_top_p(logits, top_k=20, top_p=0.9, temperature=0.7):
     probs = softmax(scaled)
 
    
-    if top_k is not None and top_k > 0 and top_k < probs.shape[0]:
+    if top_k > 0 and top_k < probs.shape[0]:
         keep = np.argpartition(probs, -top_k)[-top_k:]
         mask = np.zeros_like(probs, dtype=bool)
         mask[keep] = True
         probs = np.where(mask, probs, 0.0)
 
    
-    if top_p is not None and 0.0 < top_p < 1.0:
+    if 0.0 < top_p < 1.0:
         sorted_idx = np.argsort(probs)[::-1]
         sorted_probs = probs[sorted_idx]
         cumsum = np.cumsum(sorted_probs)
